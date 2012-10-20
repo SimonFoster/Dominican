@@ -1,0 +1,80 @@
+
+C:\Documents and Settings\fosters\Desktop\Dropbox\LUFA-120730\Projects\USBtoSPI\scripts>python MCP2515.py 0 777 "Simon" 1 
+['MCP2515.py', '0', '777', 'Simon', '1']
+Entering: [__init__] with parameters (<__main__.MCP2515 object at 0x00C23A30>, Serial<id=0xc239d0, open=True>(port='com21', baudrate=9600, bytesize=8, parity='N', stopbits=1, timeout=None, xonxoff=False, rtscts=False, dsrdtr=False))
+Exiting: [__init__]
+Entering: [reset] with parameters (<__main__.MCP2515 object at 0x00C23A30>,)
+Entering: [_transfer] with parameters (<__main__.MCP2515 object at 0x00C23A30>, [192])
+--> ['0xC0']
+<-- ['0x00']
+Exiting: [_transfer]
+Exiting: [reset]
+Entering: [set_bit_timing] with parameters (<__main__.MCP2515 object at 0x00C23A30>, [0, 172, 3])
+Entering: [write] with parameters (<__main__.MCP2515 object at 0x00C23A30>, 42, [0])
+Entering: [_transfer] with parameters (<__main__.MCP2515 object at 0x00C23A30>, [2, 42, 0])
+--> ['0x02', '0x2A', '0x00']
+<-- ['0x00', '0x00', '0x00']
+Exiting: [_transfer]
+Exiting: [write]
+Entering: [write] with parameters (<__main__.MCP2515 object at 0x00C23A30>, 41, [172])
+Entering: [_transfer] with parameters (<__main__.MCP2515 object at 0x00C23A30>, [2, 41, 172])
+--> ['0x02', '0x29', '0xAC']
+<-- ['0x00', '0x00', '0x00']
+Exiting: [_transfer]
+Exiting: [write]
+Entering: [write] with parameters (<__main__.MCP2515 object at 0x00C23A30>, 40, [3])
+Entering: [_transfer] with parameters (<__main__.MCP2515 object at 0x00C23A30>, [2, 40, 3])
+--> ['0x02', '0x28', '0x03']
+<-- ['0x00', '0x00', '0x00']
+Exiting: [_transfer]
+Exiting: [write]
+Exiting: [set_bit_timing]
+Entering: [write_transmit_message] with parameters (<__main__.MCP2515 object at 0x00C23A30>, 0, 1911, [83, 105, 109, 111, 110])
+Entering: [format_id] with parameters (<__main__.MCP2515 object at 0x00C23A30>, 1911)
+Exiting: [format_id]
+Entering: [load_TX_buffer] with parameters (<__main__.MCP2515 object at 0x00C23A30>, 0, [238, 224, 0, 0, 5, 83, 105, 109, 111, 110])
+Entering: [_transfer] with parameters (<__main__.MCP2515 object at 0x00C23A30>, [64, 238, 224, 0, 0, 5, 83, 105, 109, 111, 110])
+--> ['0x40', '0xEE', '0xE0', '0x00', '0x00', '0x05', '0x53', '0x69', '0x6D', '0x6F', '0x6E']
+<-- ['0x00', '0x00', '0x00', '0x00', '0x00', '0x00', '0x00', '0x00', '0x00', '0x00', '0x00']
+Exiting: [_transfer]
+Exiting: [load_TX_buffer]
+Exiting: [write_transmit_message]
+Entering: [set_mode] with parameters (<__main__.MCP2515 object at 0x00C23A30>, 0)
+Entering: [write] with parameters (<__main__.MCP2515 object at 0x00C23A30>, 15, [0])
+Entering: [_transfer] with parameters (<__main__.MCP2515 object at 0x00C23A30>, [2, 15, 0])
+--> ['0x02', '0x0F', '0x00']
+<-- ['0x00', '0x00', '0x00']
+Exiting: [_transfer]
+Exiting: [write]
+Exiting: [set_mode]
+Entering: [RTS] with parameters (<__main__.MCP2515 object at 0x00C23A30>, 0)
+Entering: [_transfer] with parameters (<__main__.MCP2515 object at 0x00C23A30>, [129])
+--> ['0x81']
+<-- ['0x00']
+Exiting: [_transfer]
+Exiting: [RTS]
+Entering: [RTS] with parameters (<__main__.MCP2515 object at 0x00C23A30>, 0)
+Entering: [_transfer] with parameters (<__main__.MCP2515 object at 0x00C23A30>, [129])
+--> ['0x81']
+<-- ['0x00']
+Exiting: [_transfer]
+Exiting: [RTS]
+Entering: [RTS] with parameters (<__main__.MCP2515 object at 0x00C23A30>, 0)
+Entering: [_transfer] with parameters (<__main__.MCP2515 object at 0x00C23A30>, [129])
+--> ['0x81']
+<-- ['0x00']
+Exiting: [_transfer]
+Exiting: [RTS]
+Entering: [RTS] with parameters (<__main__.MCP2515 object at 0x00C23A30>, 0)
+Entering: [_transfer] with parameters (<__main__.MCP2515 object at 0x00C23A30>, [129])
+--> ['0x81']
+<-- ['0x00']
+Exiting: [_transfer]
+Exiting: [RTS]
+Entering: [RTS] with parameters (<__main__.MCP2515 object at 0x00C23A30>, 0)
+Entering: [_transfer] with parameters (<__main__.MCP2515 object at 0x00C23A30>, [129])
+--> ['0x81']
+<-- ['0x00']
+Exiting: [_transfer]
+Exiting: [RTS]
+Terminate batch job (Y/N)? 

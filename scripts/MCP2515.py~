@@ -1,0 +1,216 @@
+#!/usr/bin/env python
+
+import serial
+import time
+import inspect
+
+MCP_WRITE       = 0x02
+MCP_READ        = 0x03
+MCP_BIT_MODIFY  = 0x05
+MCP_READ_STATUS = 0xA0
+MCP_RX_STATUS   = 0xB0
+
+MCP_RESET = 0xC0
+
+MCP_NORMAL_MODE         = 0x00
+MCP_SLEEP_MODE          = 0x01
+MCP_LOOPBACK_MODE       = 0x02
+MCP_LISTEN_MODE         = 0x03
+MCP_CONFIGURATION_MODE  = 0x04
+
+MCP_RXF0SIDH = 0x00
+MCP_RXF0SIDL = 0x01
+MCP_RXF0EID8 = 0x02
+MCP_RXF0EID0 = 0x03
+MCP_RXF1SIDH = 0x04
+MCP_RXF1SIDL = 0x05
+MCP_RXF1EID8 = 0x06
+MCP_RXF1EID0 = 0x07
+MCP_RXF2SIDH = 0x08
+MCP_RXF2SIDL = 0x09
+MCP_RXF2EID8 = 0x0A
+MCP_RXF2EID0 = 0x0B
+
+MCP_CANSTAT  = 0x0E
+MCP_CANCTRL  = 0x0F
+
+MCP_CNF3     = 0x28
+MCP_CNF2     = 0x29
+MCP_CNF1     = 0x2A
+MCP_CANINTE  = 0x2B
+MCP_CANINTF  = 0x2C
+
+# See: http://www.kvaser.com/en/support/bit-timing-calculator.html
+MCP_CBR_16MHz_500kbps_SP75_SJW1 = [ 0x00, 0xAC, 0x03 ]
+MCP_CBR_10MHz_500kbps_SP80_SJW1 = [ 0x00, 0x9A, 0x01 ]
+
+def log(func):
+    def wrapped(*args, **kwargs):
+        try:
+            print "Entering: [%s] with parameters %s" % (func.__name__, args)
+            try:
+                return func(*args, **kwargs)
+            except Exception, e:
+                print 'Exception in %s : %s' % (func.__name__, e)
+                raise
+        finally:
+            print "Exiting: [%s]" % func.__name__
+    return wrapped
+
+def trace(cls):
+    for name, m in inspect.getmembers(cls, inspect.ismethod):
+        setattr(cls,name,log(m))
+    return cls
+
+# @trace
+
+class MCP2515( object ):
+
+    def __init__( self, port, debug=None ):
+        self.port = port
+        self.debug = debug
+
+    def _transfer( self, command ):
+        if self.debug: 
+           print '-->', [ '0x%02X' % c for c in command ]
+        self.port.write( '\[' + ''.join( map( chr, command )) + '\]' )
+        response = map( ord, self.port.read( len(command) ))
+        if self.debug: 
+           print '<--', [ '0x%02X' % c for c in response ]
+        return response
+        
+    # The following mathods are part of the MCP2515 SPI 
+    # instruction set as specified in the datasheet
+    # =================================================
+    
+    def reset( self ):
+        self._transfer( [ MCP_RESET ] )
+        time.sleep( 0.01 )
+        
+    def read( self, address, count=1 ):
+        command = [ MCP_READ, address ]
+        command.extend( [0] * count )
+        return self._transfer( command )[2:]
+
+    def write( self, address, data ):
+        command = [ MCP_WRITE, address ]
+        command.extend( data )
+        self._transfer( command )
+        
+    def read_RX_buffer( self, buffer, count ):
+        # 0    RXB0SIDH    0x61
+        # 1    RXB0D0      0x66
+        # 2    RXB1SIDH    0x71
+        # 3    RXB1D0      0x76
+        assert 0 <= buffer <= 3
+        command = [ 0x90 + ( buffer << 1) ]
+        command.extend( [0] * count )
+        return self._transfer( command )[2:]
+    
+    def load_TX_buffer( self, buffer, data ):
+        # 0    TXB0SIDH    0x31
+        # 1    TXB0D0      0x36
+        # 2    TXB1SIDH    0x41
+        # 3    TXB1D0      0x46
+        # 4    TXB2SIDH    0x51
+        # 5    TXB2D0      0x56
+        assert 0 <= buffer <= 5
+        command = [ 0x40 + buffer ]
+        command.extend( data )
+        self._transfer( command )
+    
+    def RTS( self, buffer ):
+        self._transfer( [ 0x80 + ( 1 << buffer ) ] )
+        
+    def read_status( self ):
+        return self._transfer( [ 0xA0, 0 ] )[1]
+    
+    def RX_status( self ):
+        return self._transfer( [ 0xB0, 0 ] )[1]
+    
+    def bit_modify( self, address, mask, data ):
+        self._transfer( [ MCP_BIT_MODIFY, address, mask, data ] )
+
+    # The following methods are provided for convenience only
+    # (but you'll probably want to use them)
+    # =======================================================
+    
+    def set_bit_timing( self, config ):
+        self.write( MCP_CNF1, [ config[0] ] )
+        self.write( MCP_CNF2, [ config[1] ] )
+        self.write( MCP_CNF3, [ config[2] ] )
+    
+    def set_mode( self, mode, osm=0, clken=0, clkpre=0 ):
+        self.write( MCP_CANCTRL, 
+            [ (( mode   & 0x07 ) << 5 ) | 
+	      (( osm    & 0x01 ) << 3 ) | 
+              (( clken  & 0x01 ) << 1 ) | 
+	      (( clkpre & 0x01 ) ] )
+
+    def format_id( self, can_id ):
+        TXBnSIDH = ( can_id >> 3 ) & 0xFF
+        TXBnSIDL = ( can_id << 5 ) & 0xE0
+        
+        if can_id > 0x7FF:      # More than 11 bits so extended
+            TXBnSIDL |= 0x08    # Set EXIDE flag
+            TXBnSIDL |= ( can_id >> 27 ) & 0x03
+            TXBnEID8 = ( can_id >> 19 ) & 0xFF
+            TXBnEID0 = ( can_id >> 11 ) & 0xFF
+        else:
+            TXBnEID8 = 0
+            TXBnEID0 = 0
+
+        return [ TXBnSIDH, TXBnSIDL, TXBnEID8, TXBnEID0 ]        
+                
+    def write_transmit_message( self, buf, can_id, data=None, rtr=False  ):
+        message = self.format_id( can_id )
+        if data:
+            dlc = len ( data )
+            assert dlc <= 8
+            if rtr:
+                dlc |= 0x40 
+            message.append( dlc )
+            message.extend( data ) 
+        else:
+            message.append(0)
+        self.load_TX_buffer( buf << 1, message )
+
+    def write_transmit_data( self, buf, data ):
+        self.load_TX_buffer(( buf << 1 ) + 1, data )
+
+    def dump( self ):
+        for block in range(8):
+            print [ '%02x' % c for c in self.read( 16 * block, count=16 ) ]
+        print 'STATUS   : 0x%02X' % self.read_status()
+        print 'RX STATUS: 0x%02X' % self.RX_status()
+        print
+
+
+if __name__ == '__main__':
+
+    import sys
+    
+    print sys.argv
+    
+    progname, buf, can_id, data, delay = sys.argv
+    
+    buf    = int( buf )
+    can_id = int( can_id, 16 )
+    data   = map( ord, data[:8] )
+    delay  = float( delay )
+    
+    s = serial.Serial( 'com21' )           # Windows eg.
+    # s = serial.Serial( '/dev/ttyACM0' )      # Linux eg.
+
+    m = MCP2515( s )
+    m.reset()
+    m.set_bit_timing( MCP_CBR_16MHz_500kbps_SP75_SJW1 )
+
+    m.write_transmit_message( buf, can_id, data  )
+    m.set_mode( MCP_NORMAL_MODE )
+        
+    if delay:
+        while (1):
+
+            time.sleep(delay)
+            m.RTS(0)        
